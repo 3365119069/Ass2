@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemAppender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Assignment2</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">MemAppender.java</span></div><h1>MemAppender.java</h1><pre class="source lang-java linenums">import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Layout;
+import org.apache.log4j.spi.LoggingEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class MemAppender extends AppenderSkeleton implements MemAppenderMBean{
+    //enforces the singleton pattern.
+    private volatile static MemAppender instance;
+    //stores the LoggingEvents in a list
+    private static List&lt;LoggingEvent&gt; loggerEventList;
+    //layout
+    private Layout layout;
+    // maxSize(default)
+<span class="fc" id="L17">    private int maxSize=100;</span>
+    //record discarded logs number
+    //JMX monitoring
+<span class="fc" id="L20">    private long discardedLogCount = 0;</span>
+    //JMX monitoring
+    private  ArrayList&lt;String&gt; messageList;
+    private  long logsize;
+    //dependency Injection
+<span class="fc" id="L25">    private MemAppender (List&lt;LoggingEvent&gt; events) {</span>
+<span class="fc" id="L26">        MemAppender.loggerEventList=events;</span>
+<span class="fc" id="L27">        instance=this;</span>
+<span class="fc" id="L28">    }</span>
+    public static MemAppender getInstance(List&lt;LoggingEvent&gt; events) {
+        //First null detection
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (instance == null) {</span>
+<span class="fc" id="L32">            synchronized (MemAppender.class) {</span>
+                //Second null detection
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">                if (instance == null) {</span>
+                    //Instantiate the object
+<span class="fc" id="L36">                    instance = new MemAppender(events);</span>
+                }
+<span class="fc" id="L38">            }</span>
+        }
+<span class="fc" id="L40">        return instance;</span>
+    }
+    //getcurrentlogs
+    public List&lt;LoggingEvent&gt; getCurrentLogs() {
+<span class="fc" id="L44">        return Collections.unmodifiableList(loggerEventList);</span>
+    }
+    //getEventStrings
+    public List&lt;String&gt; getEventStrings() {
+
+<span class="fc" id="L49">        List&lt;String&gt; eventstrings = getCurrentLogs().stream().map(loggingEvent -&gt; this.layout.format(loggingEvent)).collect(Collectors.toList());</span>
+<span class="fc" id="L50">        List&lt;String&gt; EventStrings = Collections.unmodifiableList(eventstrings);</span>
+<span class="fc" id="L51">        return EventStrings;</span>
+    }
+    //printlogs
+    public void printlogs() {
+<span class="fc" id="L55">        List&lt;String&gt; eventstrings = getEventStrings();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (String event:eventstrings) {</span>
+<span class="fc" id="L57">            System.out.println(event);</span>
+<span class="fc" id="L58">        }</span>
+        // clear the logs
+<span class="fc" id="L60">        loggerEventList.clear();</span>
+<span class="fc" id="L61">    }</span>
+
+    public static List&lt;LoggingEvent&gt; getLoggerEventList() {
+<span class="nc" id="L64">        return loggerEventList;</span>
+    }
+
+    public static void setLoggerEventList(List&lt;LoggingEvent&gt; loggerEventList) {
+<span class="nc" id="L68">        MemAppender.loggerEventList = loggerEventList;</span>
+<span class="nc" id="L69">    }</span>
+
+    public int getMaxsize() {
+<span class="nc" id="L72">        return maxSize;</span>
+    }
+
+    public void setMaxsize(int maxSize) {
+<span class="fc" id="L76">        this.maxSize = maxSize;</span>
+<span class="fc" id="L77">    }</span>
+    @Override
+    public Layout getLayout() {
+<span class="fc" id="L80">        return layout;</span>
+    }
+    //setLayout()
+    @Override
+    public void setLayout(Layout layout) {
+<span class="fc" id="L85">        this.layout = layout;</span>
+<span class="fc" id="L86">    }</span>
+
+    //Whether you want to output text in a format
+    @Override
+    public boolean requiresLayout() {
+<span class="nc" id="L91">        return false;</span>
+    }
+    @Override
+    protected void append(LoggingEvent loggingEvent) {
+<span class="fc" id="L95">        loggerEventList.add(loggingEvent);</span>
+//move the oldest logs
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if(loggerEventList.size()&gt;maxSize){</span>
+<span class="fc" id="L98">            loggerEventList.remove(0);</span>
+            //The number of discarded logs should be tracked
+<span class="fc" id="L100">            discardedLogCount++;</span>
+        }
+<span class="fc" id="L102">    }</span>
+
+    @Override
+    public void close() {
+<span class="fc" id="L106">        instance = null;</span>
+<span class="fc" id="L107">        discardedLogCount = 0;</span>
+<span class="fc" id="L108">        loggerEventList = null;</span>
+<span class="fc" id="L109">        layout = null;</span>
+<span class="fc" id="L110">    }</span>
+    //JMX monitoring
+    @Override
+    public long getDiscardedLogCount() {
+<span class="fc" id="L114">        return discardedLogCount;</span>
+    }
+    public void setDiscardedLogCount(long discardedLogCount) {
+<span class="nc" id="L117">        this.discardedLogCount = discardedLogCount;</span>
+<span class="nc" id="L118">    }</span>
+
+    @Override
+    public ArrayList getMessageList() {
+<span class="fc" id="L122">        messageList=new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L123">        List&lt;LoggingEvent&gt; currentLogs = instance.getCurrentLogs();</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (int i = 0; i &lt; currentLogs.size(); i++) {</span>
+<span class="fc" id="L125">            messageList.add(currentLogs.get(i).getMessage().toString());</span>
+        }
+<span class="fc" id="L127">        return messageList;</span>
+    }
+
+    @Override
+    public long getLogsize() {
+<span class="fc" id="L132">        logsize=0;</span>
+<span class="fc" id="L133">        List&lt;String&gt; eventStrings = instance.getEventStrings();</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        for(int i=0;i&lt;eventStrings.size();i++){</span>
+<span class="fc" id="L135">            logsize+=eventStrings.get(i).length();</span>
+        }
+<span class="fc" id="L137">        return logsize;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

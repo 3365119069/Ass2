@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VelocityLayout.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Assignment2</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">VelocityLayout.java</span></div><h1>VelocityLayout.java</h1><pre class="source lang-java linenums">import org.apache.log4j.Layout;
+import org.apache.log4j.spi.LoggingEvent;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import java.io.StringWriter;
+import java.util.Date;
+
+public class VelocityLayout extends Layout {
+<span class="fc" id="L9">    private String pattern=&quot;[$p] $d $m$n&quot;;//default</span>
+<span class="fc" id="L10">    VelocityContext context = new VelocityContext();</span>
+<span class="fc" id="L11">    VelocityEngine engine = new VelocityEngine();</span>
+    //set its pattern in the constructor
+<span class="fc" id="L13">    public VelocityLayout(String pattern) {</span>
+<span class="fc" id="L14">        this.pattern = pattern;</span>
+<span class="fc" id="L15">    }</span>
+<span class="fc" id="L16">    public VelocityLayout(){}</span>
+    //set its pattern via a setter
+    public String getPattern() {
+<span class="fc" id="L19">        return pattern;</span>
+    }
+
+    public void setPattern(String pattern) {
+<span class="fc" id="L23">        this.pattern = pattern;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public String format(LoggingEvent loggingEvent) {
+<span class="fc" id="L28">        engine.init();</span>
+<span class="fc" id="L29">        context.put(&quot;c&quot;, loggingEvent.getLoggerName());</span>
+<span class="fc" id="L30">        context.put(&quot;d&quot;, (new Date(loggingEvent.getTimeStamp())).toString());</span>
+<span class="fc" id="L31">        context.put(&quot;m&quot;, loggingEvent.getMessage());</span>
+<span class="fc" id="L32">        context.put(&quot;p&quot;, loggingEvent.getLevel());</span>
+<span class="fc" id="L33">        context.put(&quot;t&quot;, loggingEvent.getThreadName());</span>
+<span class="fc" id="L34">        context.put(&quot;n&quot;, &quot;\n&quot;);</span>
+<span class="fc" id="L35">        StringWriter sw=new StringWriter();</span>
+<span class="fc" id="L36">        engine.evaluate(context,sw,&quot;&quot;,pattern);</span>
+        /*engine.evaluate(context,)*/
+<span class="fc" id="L38">        return sw.toString();</span>
+    }
+
+    @Override
+    public boolean ignoresThrowable() {
+<span class="fc" id="L43">        return false;</span>
+    }
+
+    @Override
+    public void activateOptions() {
+
+<span class="nc" id="L49">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
